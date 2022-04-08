@@ -85,9 +85,19 @@ EU_price<-EU_price%>%
 tail(EU_price)
 ```
 ```{r}
-ts_EU_price <- ts(EU_price$Price,frequency=12,start=c(1990,01), end=c(2022,03))
+ts_EU_price <- ts(EU_price$Price,frequency=1,start=c(1990,01), end=c(2022,03))
 plot(ts_EU_price)
+#change frequency to 1
+#study the trend rather than seasonality
 ```
+```{r}
+library(trend)
+pettittTest<-pettitt.test(ts_EU_price)
+print(pettittTest)
+```
+#
+p value is really small, reject the null, so there is a change in trend.
+
 ```{r}
 ts_EU_price %>% mstl() %>%
 autoplot()
@@ -103,6 +113,65 @@ autoplot()
 ```{r}
 SARIMA_autofit <- auto.arima(ts_EU_price_train)
 checkresiduals(SARIMA_autofit)
+```
+```{r}
+ETS_fit <-  stlf(ts_EU_price_train,h=12)
+
+#Plot foresting results
+autoplot(ETS_fit) + ylab("EU NG Price")
+
+#Plot model + observed data
+autoplot(ts_EU_price) +
+  autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
+  ylab("Active Power")
+```
+```{r}
+#Include the upward
+ts_EU_price_train2<-subset(ts_EU_price,end=length(ts_EU_price)-2)
+ts_EU_price_test2<-subset(ts_EU_price,start=length(ts_EU_price)-2)
+ts_EU_price_train2 %>% mstl() %>%
+autoplot()
+```
+```{r}
+ETS_fit2 <-  stlf(ts_EU_price_train2,h=12)
+
+#Plot foresting results
+autoplot(ETS_fit2) + ylab("EU NG Price")
+
+#Plot model + observed data
+autoplot(ts_EU_price) +
+  autolayer(ETS_fit2, series="STL + ETS",PI=FALSE) +
+  ylab("Active Power")
+```
+```{r}
+NN_fit2 <- nnetar(ts_EU_price_train2,p=1,P=0,xreg=fourier(ts_EU_price_train2, K=2))
+
+#NN_for <- forecast(NN_fit, h=365) 
+NN_for2 <- forecast::forecast(NN_fit2, h=365,xreg=fourier(ts_EU_price_train2, 
+                                          K=2,h=12))
+
+#Plot foresting results
+autoplot(NN_for2) +
+  ylab("Active Power") 
+
+#Plot model + observed data
+autoplot(ts_EU_price) +
+  autolayer(NN_for2, series="Neural Network",PI=FALSE)+
+  ylab("Active Power") 
+```
+
+
+```{r}
+ts_EU_price_shorten <- ts(EU_price$Price,frequency=12,start=c(2005,01), end=c(2022,03))
+plot(ts_EU_price_shorten)
+```
+```{r}
+SARIMA_autofit_shorten <- auto.arima(ts_EU_price_shorten)
+checkresiduals(SARIMA_autofit_shorten)
+```
+```{r}
+ts_EU_price_shorten %>% mstl() %>%
+autoplot()
 ```
 
 
