@@ -74,8 +74,35 @@ autoplot()
 ```
 
 ```{r}
-World_NG<-read.csv(file="./Data/World_NG_Price.csv")
-World_NG$DATE<-my(World_NG$DATE)
-World_NG
+EU_price<-read.csv(file="./Data/World_NG_Price.csv")
+EU_price$DATE<-as.Date(EU_price$DATE)
+EU_price
 ```
+
+```{r}
+EU_price<-EU_price%>%
+  rename( Price=PNGASEUUSDM ) 
+tail(EU_price)
+```
+```{r}
+ts_EU_price <- ts(EU_price$Price,frequency=12,start=c(1990,01), end=c(2022,03))
+plot(ts_EU_price)
+```
+```{r}
+ts_EU_price %>% mstl() %>%
+autoplot()
+```
+
+```{r}
+n_for=12
+ts_EU_price_train<-subset(ts_EU_price,end=length(ts_EU_price)-n_for)
+ts_EU_price_test<-subset(ts_EU_price,start=length(ts_EU_price)-n_for)
+ts_EU_price_train %>% mstl() %>%
+autoplot()
+```
+```{r}
+SARIMA_autofit <- auto.arima(ts_EU_price_train)
+checkresiduals(SARIMA_autofit)
+```
+
 
